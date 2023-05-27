@@ -4,7 +4,7 @@ SECTION MBR vstart=0x7c00
     mov es,ax
     mov ss,ax
     mov fs,ax
-    mov sp,0x7c00
+    mov sp,ax
     mov ax,0xb800;用于文本模式显示适配器显存起始位置0xb800
     mov gs,ax
 
