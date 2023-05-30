@@ -14,6 +14,8 @@ jmp loader_start                      		   ;下面存放数据段 构建gdt 跳�
   		       dd DESC_DATA_HIGH4
     		       
     VIDEO_DESC      : dd 0x80000007         		   ;0xB8000 到0xBFFFF为文字模式显示内存 B只能在boot.inc中出现定义了 此处不够空间了 8000刚好够
+                                                       ;注意此处与之前的差别，开启保护模式后不会再左移4位了，因此段描述符中的是实际段地址0xb8000
+                                                       ;cr0的PE位等于1后根据段选择子索引到这个地址
                         dd DESC_VIDEO_HIGH4     	   ;0x0007 (bFFFF-b8000)/4k = 0x7
                  
     GDT_SIZE              equ $ - GDT_BASE               ;当前位置减去GDT_BASE的地址 等于GDT的大小
