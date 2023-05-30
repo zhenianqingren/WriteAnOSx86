@@ -59,12 +59,12 @@ SECTION MBR vstart=0x7c00 ;起始地址编译在0x7c00
     
     mov cx,4;读取磁盘数 cx常作计数
     
-    call rd_disk_m_16
+    call .rd_disk_m_16
 
-    jmp LOADER_BASE_ADDR ; 直接当跳跳熊 开跳0x600
+    jmp LOADER_BASE_ADDR+0x300 ; 直接当跳跳熊 开跳0x600
 ;------------------------------------------------------------------------
 ;读取第二块硬盘
-rd_disk_m_16:
+.rd_disk_m_16:
 ;------------------------------------------------------------------------
 ;1 写入待操作磁盘数
 ;2 写入LBA 低24位寄存器 确认扇区
@@ -128,7 +128,7 @@ rd_disk_m_16:
 ;;;;;;;;;;;;;;;;;;;;;
     
 		   ;设置不断读取重复 如果不为1则一直循环
-  .not_ready:     
+.not_ready:     
     nop           ; !!! 空跳转指令 在循环中达到延时目的
     in al,dx      ; 把寄存器中的信息返还出来
     and al,0x88   ; !!! 0100 0100 0x88
@@ -144,7 +144,7 @@ rd_disk_m_16:
     mul dx        ;与di 与 ax 做乘法 计算一共需要读多少次 方便作循环 低16位放ax 高16位放dx
     mov cx,ax      ;loop 与 cx相匹配 cx-- 当cx == 0即跳出循环
     mov dx,0x1F0
- .go_read_loop:
+.go_read_loop:
     in ax,dx      ;两字节dx 一次读两字
     mov [bx],ax
     add bx,2
