@@ -4,26 +4,26 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR 		   ;是个程序都需要有栈区 我�
 
 				       		   ;对汇编再复习 db define byte,dw define word,dd define dword
     GDT_BASE        : dd 0x00000000          		   ;刚开始的段选择子0不能使用 故用两个双字 来填充
-   		       dd 0x00000000 
+   		              dd 0x00000000 
     
     CODE_DESC       : dd 0x0000FFFF         		   ;FFFF是与其他的几部分相连接 形成0XFFFFF段界限
-    		       dd DESC_CODE_HIGH4
+    		          dd DESC_CODE_HIGH4
     
     DATA_STACK_DESC : dd 0x0000FFFF
-  		       dd DESC_DATA_HIGH4
+  		              dd DESC_DATA_HIGH4
     		       
     VIDEO_DESC      : dd 0x80000007         		   ;0xB8000 到0xBFFFF为文字模式显示内存 B只能在boot.inc中出现定义了 此处不够空间了 8000刚好够
-                                                       ;注意此处与之前的差别，开启保护模式后不会再左移4位了，因此段描述符中的是实际段地址0xb8000
+                      dd DESC_VIDEO_HIGH4              ;注意此处与之前的差别，开启保护模式后不会再左移4位了，因此段描述符中的是实际段地址0xb8000
                                                        ;cr0的PE位等于1后根据段选择子索引到这个地址
-                        dd DESC_VIDEO_HIGH4     	   ;0x0007 (bFFFF-b8000)/4k = 0x7
+                                                 	   ;0x0007 (bFFFF-b8000)/4k = 0x7
                  
     GDT_SIZE              equ $ - GDT_BASE               ;当前位置减去GDT_BASE的地址 等于GDT的大小
-    GDT_LIMIT       	   equ GDT_SIZE - 1   	           ;SIZE - 1即为最大偏移量
+    GDT_LIMIT       	  equ GDT_SIZE - 1   	         ;SIZE - 1即为最大偏移量
     
-    times 60 dq 0                             	   ;预留60个 四字型 描述符
+    times 60 dq 0                             	         ;预留60个 四字型 描述符
 
     SELECTOR_CODE        equ (0X0001<<3) + TI_GDT + RPL0    ;16位寄存器 4位TI RPL状态 GDT剩下的选择子
-    SELECTOR_DATA	  equ (0X0002<<3) + TI_GDT + RPL0
+    SELECTOR_DATA	     equ (0X0002<<3) + TI_GDT + RPL0
     SELECTOR_VIDEO       equ (0X0003<<3) + TI_GDT + RPL0
 
     ;total_mem_bytes用于保存内存容量，以字节为单位
@@ -34,7 +34,7 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR 		   ;是个程序都需要有栈区 我�
 
     ;gdt指针 2字gdt界限放在前面 4字gdt地址放在后面 lgdt 48位格式 低位16位界限 高位32位起始地址
     gdt_ptr           dw GDT_LIMIT
-    		       dd GDT_BASE
+    		          dd GDT_BASE
     
     ;人工对齐: total_mem_bytes4+gdt_ptr6+ards_buff244+ards_nr2 共256个字节
     ards_buff times 244 db 0
@@ -121,7 +121,7 @@ loader_start:;偏移0x300
 .mem_get_ok:
     mov [total_mem_bytes],edx
 
-    jmp $;tmp
+    ; jmp $;tmp
 
     ;;
     
@@ -152,7 +152,80 @@ loader_start:;偏移0x300
     mov esp,LOADER_STACK_TOP
     mov ax,SELECTOR_VIDEO
     mov gs,ax
-    
-    mov byte [gs:160],'P'
-    
-    jmp $          
+;创建页目录及页表并初始化内存位图
+    call setup_page
+    ;将描述符表地址及偏移量写入内存gdt_ptr，一会用新地址重新加载
+    sgdt [gdt_ptr]
+    ;将gdt段描述符中的视频段描述符的段基址+0xc0000000，这种与硬件相关的一定要在内核地址空间，不能被用户程序随意访问
+    mov ebx,[gdt_ptr+2];ebx<-GDT_BASE
+    or dword [ebx+0x18+4],0xc000_0000
+    ;将gdt的基址加上0xc0000000使其成为高地址
+    add dword [gdt_ptr+2],0xc000_0000
+    ;栈指针同样映射到内核地址
+    add esp,0xc000_0000
+    ;页目录地址赋给cr3
+    mov eax,PAGE_DIR_TABLE_POS
+    mov cr3,eax
+    ;打开cr0的pg位
+    mov eax,cr0
+    or eax,0x80000000
+    mov cr0,eax
+    ;开启分页机制后，用gdt新的地址重新加载
+    lgdt [gdt_ptr+2]
+    mov byte [gs:160],'V'
+    jmp $
+;------------------创建页目录及页表------------------
+setup_page:
+;先把页目录占用的字节空间清0
+    mov ecx,4096
+    mov esi,0
+.clear_page_dir:
+    mov byte [PAGE_DIR_TABLE_POS+esi],0
+    inc esi
+    loop .clear_page_dir
+
+;开始创建页目录项PDE
+;二级页表划分，高10bit索引页目录项，中间10bit索引页表项，低12bit组成最终物理地址页内偏移
+;页目录项和页表项4byte对齐，因此它们的物理地址由索引左移两位
+;创建任何表项实际上就是创建对虚拟地址到物理地址的映射
+;首先创建对内核的映射，第一部分是规定了3GB~4GB的地址空间为内核空间，而我们的内核大小不会超过1MB，被装载到低1MB，因此只需映射0xc0000000~0xc00fffff到物理地址0x0~0xfffff
+;由于loader此时还运行在低1MB的空间并且已经开启了分段机制，因此要保证它的虚拟地址就是物理地址，即映射0x0~0xfffff到物理地址0x0~0xfffff
+;第一个页表负责映射内核地址
+.create_pde:
+    mov eax,PAGE_DIR_TABLE_POS
+    add eax,0x1000;此时eax是第一个页表的物理地址
+    mov ebx,eax
+
+;每一个页表可映射的地址范围是4MB
+    or eax,PG_US_U | PG_RW_W | PG_P;页表存在于内存，可读写并且所有特权级都可以访问
+    mov [PAGE_DIR_TABLE_POS+0x0],eax
+    mov [PAGE_DIR_TABLE_POS+0xc00],eax
+
+    sub eax,0x1000
+    mov [PAGE_DIR_TABLE_POS+4092],eax
+    ;最后一个页目录项映射的页表是它自己，用来索引页表的物理地址
+
+;创建页表项，仅创建1MB的映射即可
+    mov ecx,256
+    mov esi,0
+    mov edx,PG_US_U | PG_RW_W | PG_P
+.create_pte:
+    mov [ebx+esi*4],edx
+    add edx,4096
+    inc esi
+    loop .create_pte
+
+;创建内核其他页表的pde
+    mov eax,PAGE_DIR_TABLE_POS
+    add eax,0x2000
+    or eax,PG_US_U | PG_RW_W | PG_P
+    mov ebx,PAGE_DIR_TABLE_POS
+    mov ecx,254
+    mov esi,769
+    ;范围是从769~1022的所有目录项数量
+.create_kernel_pde:
+    mov [ebx+esi*4],eax
+    add eax,0x1000
+    inc esi
+    loop .create_kernel_pde
+    ret
