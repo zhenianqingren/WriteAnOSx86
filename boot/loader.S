@@ -152,6 +152,16 @@ loader_start:;偏移0x300
     mov esp,LOADER_STACK_TOP
     mov ax,SELECTOR_VIDEO
     mov gs,ax
+
+;-----------------------加载kernel-----------------------------
+    mov eax,KERNEL_START_SECTOR
+    mov ebx,KERNEL_BIN_BASE_ADDR
+    ;从磁盘读出后写入到ebx指定地址
+    mov ecx,200;读入的扇区数，使其足够大，方便扩展
+    call .rd_disk_m_32
+    ;读入到内存
+
+;--------------------------------------------------------------
 ;创建页目录及页表并初始化内存位图
     call setup_page
     ;将描述符表地址及偏移量写入内存gdt_ptr，一会用新地址重新加载
@@ -171,9 +181,159 @@ loader_start:;偏移0x300
     or eax,0x80000000
     mov cr0,eax
     ;开启分页机制后，用gdt新的地址重新加载
-    lgdt [gdt_ptr+2]
-    mov byte [gs:160],'V'
-    jmp $
+    lgdt [gdt_ptr]
+
+;以防万一，重新刷新流水线
+    jmp dword SELECTOR_CODE:enter_kernel
+
+.rd_disk_m_32:
+;------------------------------------------------------------------------
+;1 写入待操作磁盘数
+;2 写入LBA 低24位寄存器 确认扇区
+;3 device 寄存器 第4位主次盘 第6位LBA模式 改为1
+;4 command 写指令
+;5 读取status状态寄存器 判断是否完成工作
+;6 完成工作 取出数据
+ 
+ ;;;;;;;;;;;;;;;;;;;;;
+ ;1 写入待操作磁盘数
+ ;;;;;;;;;;;;;;;;;;;;;
+    mov esi,eax   ; !!! 备份eax
+    mov edi,ecx     ; !!! 备份ecx
+    
+    mov dx,0x1F2  ; 0x1F2为Sector Count 端口号 送到dx寄存器中
+    mov al,cl     ; 只能由ax al传递数据
+    out dx,al     ; 
+    
+    mov eax,esi   ; 前面需要ax来传递数据
+    
+;;;;;;;;;;;;;;;;;;;;;
+;2 写入LBA 24位寄存器 确认扇区
+;;;;;;;;;;;;;;;;;;;;;
+    mov cl,0x8    ; shr 右移8位 把24位给送到 LBA low mid high 寄存器中
+
+    mov dx,0x1F3  ; LBA low
+    out dx,al
+    
+    mov dx,0x1F4  ; LBA mid
+    shr eax,cl    ; eax为32位 ax为16位 eax的低位字节 右移8位即8~15
+    out dx,al
+    
+    mov dx,0x1F5
+    shr eax,cl
+    out dx,al
+    
+;;;;;;;;;;;;;;;;;;;;;
+;3 device 寄存器 第4位主次盘 第6位LBA模式 改为1
+;;;;;;;;;;;;;;;;;;;;;
+
+    		 
+    		  ; 24 25 26 27位 尽管我们知道ax只有2 但还是需要按规矩办事 
+    		  ; 把除了最后四位的其他位置设置成0
+    shr eax,cl
+    
+    and al,0x0f 
+    or al,0xe0   ;!!! 把第四-七位设置成0111 转换为LBA模式
+    mov dx,0x1F6 ; 参照硬盘控制器端口表 Device 
+    out dx,al
+
+;;;;;;;;;;;;;;;;;;;;;
+;4 向Command写操作 Status和Command一个寄存器
+;;;;;;;;;;;;;;;;;;;;;
+
+    mov dx,0x1F7 ; Status寄存器端口号
+    mov ax,0x20  ; 0x20是读命令
+    out dx,al
+    
+;;;;;;;;;;;;;;;;;;;;;
+;5 向Status查看是否准备好惹 
+;;;;;;;;;;;;;;;;;;;;;
+    
+		   ;设置不断读取重复 如果不为1则一直循环
+.not_ready:     
+    nop           ; !!! 空跳转指令 在循环中达到延时目的
+    in al,dx      ; 把寄存器中的信息返还出来
+    and al,0x88   ; !!! 0100 0100 0x88
+    cmp al,0x08
+    jne .not_ready ; !!! jump not equal == 0
+    
+;;;;;;;;;;;;;;;;;;;;;
+;6 读取数据
+;;;;;;;;;;;;;;;;;;;;;
+
+    mov ax,di      ;把 di 储存的cx 取出来
+    mov dx,256
+    mul dx        ;与di 与 ax 做乘法 计算一共需要读多少次 方便作循环 低16位放ax 高16位放dx
+    mov cx,ax      ;loop 与 cx相匹配 cx-- 当cx == 0即跳出循环
+    mov dx,0x1F0
+.go_read_loop:
+    in ax,dx      ;两字节dx 一次读两字
+    mov [ebx],ax
+    add ebx,2
+    loop .go_read_loop
+    
+    ret ;与call 配对返回原来的位置 跳转到call下一条指令
+
+enter_kernel:
+    call kernel_init
+    mov esp,0xc009_f000;设置一个新的栈值确保不会盖过内核
+    jmp KERNEL_ENTRY_POINT
+
+;-------------------------初始化内核------------------------------------
+kernel_init:
+    ;loader位于0x900,最终大小不会超过2000bytes,因此选定0x900+2000=0x10d0,再取整到0x1500用于放置内核映像入口地址
+    ;由于已经开启了分页,想要访问到低1MB空间,再加0xc000_0000,最终线性地址0xc000_1500
+    xor eax,eax
+    xor ebx,ebx;记录程序头表地址
+    xor ecx,ecx;记录程序头表中program header数量
+    xor edx,edx;记录program header尺寸
+
+    mov dx,[KERNEL_BIN_BASE_ADDR+42];program header table entry size
+    mov ebx,[KERNEL_BIN_BASE_ADDR+28];Program header table file offset
+    add ebx,KERNEL_BIN_BASE_ADDR
+    mov cx,[KERNEL_BIN_BASE_ADDR+44];Program header table entry count
+
+.each_segment:
+    cmp byte [ebx+0],PT_NULL;如果program header未使用
+    je .PT_NULL
+
+    push dword [ebx+16];Segment size in file parameter: size
+
+    mov eax,[ebx+4]    ;Segment file offset
+    add eax,KERNEL_BIN_BASE_ADDR
+    push eax;parameter: src
+
+    push dword [ebx+8];p_vaddr parameter:dst
+
+    ;mem_cpy(dst,src,size)
+    call mem_cpy
+    add esp,12;清理三个参数
+
+.PT_NULL:
+    add ebx,edx
+    loop .each_segment
+    ret
+
+;size
+;src
+;dst
+;return address
+;ebp            <---ebp
+;ecx            <---esp
+mem_cpy:
+    cld;clean direction 每执行一次movsb，esi和edi自动加1，与std相反
+    push ebp
+    mov ebp,esp
+    push ecx
+
+    mov edi,[ebp+8];dst
+    mov esi,[ebp+12];src
+    mov ecx,[ebp+16];size
+    rep movsb       ;movsb: move one byte es:edi<-ds:esi
+                    ;rep: repeat do ... --ecx until ecx==0
+    pop ecx
+    pop ebp
+    ret
 ;------------------创建页目录及页表------------------
 setup_page:
 ;先把页目录占用的字节空间清0

@@ -61,7 +61,7 @@ SECTION MBR vstart=0x7c00 ;起始地址编译在0x7c00
     
     call .rd_disk_m_16
 
-    jmp LOADER_BASE_ADDR+0x300 ; 直接当跳跳熊 开跳0x600
+    jmp LOADER_BASE_ADDR+0x300 ; 跳0xc00执行loader
 ;------------------------------------------------------------------------
 ;读取第二块硬盘
 .rd_disk_m_16:
@@ -80,10 +80,10 @@ SECTION MBR vstart=0x7c00 ;起始地址编译在0x7c00
     mov di,cx     ; !!! 备份cx
     
     mov dx,0x1F2  ; 0x1F2为Sector Count 端口号 送到dx寄存器中
-    mov al,cl     ; !!! 忘了只能由ax al传递数据
-    out dx,al     ; !!! 这里修改了 原out dx,cl
+    mov al,cl     ; 只能由ax al传递数据
+    out dx,al     ; 
     
-    mov eax,esi   ; !!!袄无! 原来备份是这个用 前面需要ax来传递数据 麻了
+    mov eax,esi   ; 前面需要ax来传递数据
     
 ;;;;;;;;;;;;;;;;;;;;;
 ;2 写入LBA 24位寄存器 确认扇区
