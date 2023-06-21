@@ -10,6 +10,53 @@
 #define PIC_S_CTRL 0xa0 /*从片控制端口  ICW1 OCW2 OCW3*/
 #define PIC_S_DATA 0xa1 /*从片数据端口  ICW2 ICW3 ICW4 OCW1*/
 
+#define EFLAGS_IF 0x00000020
+#define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl;popl %0" \
+                                           : "=g"(EFLAG_VAR))
+
+enum intr_status intr_get_status()
+{
+    uint32_t eflags = 0;
+    GET_EFLAGS(eflags);
+    return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF;
+}
+
+enum intr_status intr_set_status(enum intr_status status)
+{
+    return status & INTR_ON ? intr_enable() : intr_disable();
+}
+
+/*开中断并返回中断前的状态*/
+enum intr_status intr_enable(void)
+{
+    if (intr_get_status() == INTR_ON)
+    {
+        return INTR_ON;
+    }
+    else
+    {
+        asm volatile("sti");
+        return INTR_OFF;
+    }
+}
+
+/*关中断并返回中断前的状态*/
+enum intr_status intr_disable(void)
+{
+    if (intr_get_status() == INTR_ON)
+    {
+        asm volatile("cli"
+                     :
+                     :
+                     : "memory");
+        return INTR_ON;
+    }
+    else
+    {
+        return INTR_OFF;
+    }
+}
+
 /*中断门描述符结构体*/
 struct gate_desc
 {
