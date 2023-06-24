@@ -10,4 +10,5 @@ void init_all()
     idt_init();
     timer_init();
     mem_init();
+    thread_init();
 }

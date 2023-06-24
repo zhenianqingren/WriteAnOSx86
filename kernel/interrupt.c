@@ -112,11 +112,41 @@ static void general_intr_handler(uint8_t vec_nr)
         // 0x2f是从片最后一个IRQ引脚，保留项
     }
 
+    // 光标置为0，在屏幕左上角清出一片打印异常信息的区域，方便阅读
+    set_cursor(0);
+    int cursor_pos = 0;
+    while (cursor_pos < 320)
+    {
+        put_char(' ');
+        cursor_pos++;
+    }
+    set_cursor(0);
+    put_str("--------exception message start--------\n");
+    set_cursor(88); // 从第二行第8个字符开始打印
+    put_str(intr_name[vec_nr]);
+    if (vec_nr == 14)
+    {
+        // Page Fault 将缺失地址打印并悬停
+        uint32_t page_fault_vaddr = 0;
+        asm("movl %%cr2,%0"
+            : "=r"(page_fault_vaddr));
+        put_str("\npage fault addr is: 0x");
+        put_int(page_fault_vaddr);
+    }
+    put_str("--------exception message end--------\n");
+    while (1)
+        ;
+
     put_str("int vector : 0x");
     put_int(vec_nr);
     put_char('\n');
 
     return;
+}
+
+void register_handler(uint8_t vec_no, intr_handler func)
+{
+    idt_table[vec_no] = func;
 }
 
 static void exception_init(void)

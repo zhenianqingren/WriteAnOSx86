@@ -124,6 +124,32 @@ put_char:
     popad
     ret
 
+global set_cursor:
+set_cursor:
+    pushad
+    ;在栈中获取光标位置
+    mov bx,[esp+36]
+    ;put_char后移动光标至bx
+    mov dx,0x03d4
+    mov al,0x0e
+    out dx,al
+
+    mov dx,0x03d5
+    mov al,bh
+    out dx,al
+    ;光标高8bit
+
+    mov dx,0x03d4
+    mov al,0x0f
+    out dx,al
+
+    mov dx,0x03d5
+    mov al,bl
+    out dx,al
+    ;光标低8bit
+    popad
+    ret
+
 global put_str:
 put_str:
     pushad

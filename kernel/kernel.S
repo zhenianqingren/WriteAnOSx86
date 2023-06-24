@@ -21,7 +21,7 @@ intr%1entry:
     push es
     push fs
     push gs
-    pushad
+    pushad;备份32 bit寄存器环境,压入所有双字长的寄存器,入栈顺序:EAX->ECX->EDX->EBX->ESP->EBP->ESI->EDI
 
     ;向主片和从片发送中断结束命令
     mov al,0x20
