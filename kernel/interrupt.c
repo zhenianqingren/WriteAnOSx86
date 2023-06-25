@@ -4,13 +4,13 @@
 #include "io.h"
 #include "print.h"
 
-#define IDT_DESC_CNT 0x21
+#define IDT_DESC_CNT 0x30
 #define PIC_M_CTRL 0x20 /*主片控制端口  ICW1 OCW2 OCW3*/
 #define PIC_M_DATA 0x21 /*主片数据端口  ICW2 ICW3 ICW4 OCW1*/
 #define PIC_S_CTRL 0xa0 /*从片控制端口  ICW1 OCW2 OCW3*/
 #define PIC_S_DATA 0xa1 /*从片数据端口  ICW2 ICW3 ICW4 OCW1*/
 
-#define EFLAGS_IF 0x00000020
+#define EFLAGS_IF 0x200
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl;popl %0" \
                                            : "=g"(EFLAG_VAR))
 
@@ -88,9 +88,9 @@ static void pic_init(void)
     outb(PIC_S_DATA, 0x02); // ICW3: 设置从片连接到主片的IR2引脚
     outb(PIC_S_DATA, 0x01); // ICW4: 8086模式，正常EOI
 
-    // 打开主片IR0，目前只接受时钟中断
-    outb(PIC_M_DATA, 0xfe);
-    outb(PIC_S_DATA, 0xff);
+    // 打开主片IR0，目前只接受时钟中断和键盘中断
+    outb(PIC_M_DATA, 0xfc); // 主
+    outb(PIC_S_DATA, 0xff); // 从
 
     put_str("   pic_init done\n");
 }

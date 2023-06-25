@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdint.h": "c",
-        "thread.h": "c"
+        "thread.h": "c",
+        "ratio": "c"
     }
 }

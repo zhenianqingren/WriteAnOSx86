@@ -151,3 +151,36 @@ void thread_init(void)
     make_main_thread();
     put_str("thread init done\n");
 }
+
+void thread_block(enum task_status stat)
+{
+    /*
+        stat: BLOCKED WAITING HANGING不会被调度
+    */
+    ASSERT(stat == TASK_BLOCKED || stat == TASK_HANGING || stat == TASK_WAITING);
+    enum intr_status old = intr_disable();
+    struct task_struct *pthread = running_thread();
+    pthread->status = stat;
+    scheduler();
+    intr_set_status(old);
+}
+
+void thread_unblock(struct task_struct *pthread)
+{
+    ASSERT(pthread->status == TASK_BLOCKED || pthread->status == TASK_WAITING || pthread->status == TASK_HANGING);
+    enum intr_status old = intr_disable();
+    if (pthread->status != TASK_READY)
+    {
+        ASSERT(!elem_find(&thread_ready_list, &pthread->general_tag));
+        if (elem_find(&thread_ready_list, &pthread->general_tag))
+        {
+            PANIC("thread_unblock: blocked thread in ready list\n");
+        }
+        /*
+            尽快调度
+        */
+        list_push(&thread_ready_list, &pthread->general_tag);
+        pthread->status = TASK_READY;
+    }
+    intr_set_status(old);
+}
