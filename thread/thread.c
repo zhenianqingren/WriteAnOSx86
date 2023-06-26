@@ -5,13 +5,14 @@
 #include "string.h"
 #include "debug.h"
 #include "interrupt.h"
+#include "process.h"
 
 #define PG_SIZE 4096
 
 struct task_struct *main_thread;     // 主线程PCB
 struct list thread_ready_list;       // 就绪队列
 struct list thread_all_list;         // 所有任务队列
-static struct list_elem *thread_tag; // 保存队列中的线程节点
+struct list_elem *thread_tag; // 保存队列中的线程节点
 
 extern void switch_to(struct task_struct *cur, struct task_struct *next);
 
@@ -125,8 +126,11 @@ void scheduler()
     }
 
     ASSERT(!list_empty(&thread_ready_list));
-    struct task_struct *next = elem2entry(struct task_struct, general_tag, list_pop(&thread_ready_list));
+    thread_tag = list_pop(&thread_ready_list);
+    struct task_struct *next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
+    // 先切换页表 不会影响0级栈 因为此段代码是内核代码 所有进程的高1GB地址空间都被映射到了内核
+    process_activate(next);
     switch_to(cur, next);
 }
 

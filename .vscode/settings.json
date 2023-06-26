@@ -1,7 +1,8 @@
 {
     "files.associations": {
-        "stdint.h": "c",
-        "thread.h": "c",
-        "ratio": "c"
+        "print.h": "c",
+        "bitmap.h": "c",
+        "memory.h": "c",
+        "global.h": "c"
     }
 }

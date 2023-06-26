@@ -3,6 +3,9 @@
 #include "stdint.h"
 #include "list.h"
 #include "print.h"
+#include "memory.h"
+#include "../kernel/memory.h"
+#include "bitmap.h"
 
 #define T_MAGIC 0x19870916
 // 自定义通用函数类型
@@ -83,8 +86,9 @@ struct task_struct
     struct list_elem general_tag;  // 用于线程在一般的队列中的结点
     struct list_elem all_list_tag; // 用于线程在thread_all_list中的结点 通过此地址可直接计算出task_struct的地址
 
-    uint32_t *pgdir;      // 进程页表的虚拟地址
-    uint32_t stack_magic; // 栈的边界标记，检测栈溢出
+    uint32_t *pgdir;                    // 进程页表的虚拟地址
+    struct virtual_addr userprog_vaddr; // 用户进程的虚拟地址
+    uint32_t stack_magic;               // 栈的边界标记，检测栈溢出
 };
 
 void init_thread(struct task_struct *pthread, char *name, int prio);
@@ -94,4 +98,8 @@ void thread_init(void);
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct *pthread);
 struct task_struct *running_thread();
+
+extern struct list thread_ready_list;       // 就绪队列
+extern struct list thread_all_list;         // 所有任务队列
+extern struct list_elem *thread_tag; // 保存队列中的线程节点
 #endif

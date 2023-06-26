@@ -80,4 +80,20 @@ struct gdt_desc
     uint8_t base_high_byte;
 };
 
+#define EFLAGS_MBS (1 << 1)     // 此项必须设置
+#define EFLAGS_IF_1 (1 << 9)    // 开中断
+#define EFLAGS_IF_0 0           // 关中断
+#define EFLAGS_IOPL_3 (3 << 12) // IOPL3 测试用户程序在非系统调用环境下进行IO
+#define EFLAGS_IOPL_0 (0 << 12) // IOPL0
+
+#define NULL ((void *)0)
+#define DIV_ROUND_UP(X, STEP) ((X + STEP - 1) / (STEP))
+#define bool int
+#define true 1
+#define false 0
+
+#define PG_SIZE 4096
+
+#define USER_STACK3_VADDR (0xc0000000 - 0x1000)
+#define default_prio 31
 #endif
