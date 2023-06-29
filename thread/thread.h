@@ -1,6 +1,6 @@
 #ifndef __THREAD_THREAD_H
 #define __THREAD_THREAD_H
-#include "stdint.h"
+#include "../lib/stdint.h"
 #include "list.h"
 #include "print.h"
 #include "memory.h"
@@ -77,6 +77,7 @@ struct thread_stack
 struct task_struct
 {
     uint32_t *self_kstack; // 每个内核级线程都有自己的内核栈
+    pid_t pid;
     enum task_status status;
     char name[16];
     uint8_t priority;
@@ -88,7 +89,8 @@ struct task_struct
 
     uint32_t *pgdir;                    // 进程页表的虚拟地址
     struct virtual_addr userprog_vaddr; // 用户进程的虚拟地址
-    uint32_t stack_magic;               // 栈的边界标记，检测栈溢出
+    struct mem_block_desc u_block_desc[DESC_CNT];
+    uint32_t stack_magic; // 栈的边界标记，检测栈溢出
 };
 
 void init_thread(struct task_struct *pthread, char *name, int prio);
@@ -99,7 +101,7 @@ void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct *pthread);
 struct task_struct *running_thread();
 
-extern struct list thread_ready_list;       // 就绪队列
-extern struct list thread_all_list;         // 所有任务队列
-extern struct list_elem *thread_tag; // 保存队列中的线程节点
+extern struct list thread_ready_list; // 就绪队列
+extern struct list thread_all_list;   // 所有任务队列
+extern struct list_elem *thread_tag;  // 保存队列中的线程节点
 #endif

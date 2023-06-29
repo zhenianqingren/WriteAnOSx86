@@ -1,6 +1,5 @@
 #include "process.h"
-
-
+#include "../kernel/memory.h"
 /**
  * 构建用户进程初始上下文信息
  */
@@ -116,11 +115,14 @@ void process_execute(void *filename, char *name)
     // 3. 创建用户虚拟地址空间位图
     create_user_vaddr_bitmap(thread);
 
-    // 4. 初始化中断栈 首次被switch to后，进入start process调整上下文环境然后运行filename程序文件
+    // 4. 初始化上下文环境 首次被switch to后，进入start process调整上下文环境然后运行filename程序文件
     thread_create(thread, start_process, filename);
 
     // 5. 为用户进程创建页表，实现地址空间隔离
     thread->pgdir = create_page_dir();
+
+    // 6. 堆区描述符数组
+    block_desc_init(thread->u_block_desc);
 
     enum intr_status old = intr_disable();
     ASSERT(!elem_find(&thread_ready_list, &thread->general_tag));

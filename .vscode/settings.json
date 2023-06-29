@@ -3,6 +3,10 @@
         "print.h": "c",
         "bitmap.h": "c",
         "memory.h": "c",
-        "global.h": "c"
+        "global.h": "c",
+        "thread.h": "c",
+        "syscall.h": "c",
+        "stdio.h": "c",
+        "list.h": "c"
     }
 }

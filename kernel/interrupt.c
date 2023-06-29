@@ -4,7 +4,7 @@
 #include "io.h"
 #include "print.h"
 
-#define IDT_DESC_CNT 0x30
+#define IDT_DESC_CNT 0x81
 #define PIC_M_CTRL 0x20 /*主片控制端口  ICW1 OCW2 OCW3*/
 #define PIC_M_DATA 0x21 /*主片数据端口  ICW2 ICW3 ICW4 OCW1*/
 #define PIC_S_CTRL 0xa0 /*从片控制端口  ICW1 OCW2 OCW3*/
@@ -13,6 +13,8 @@
 #define EFLAGS_IF 0x200
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl;popl %0" \
                                            : "=g"(EFLAG_VAR))
+
+extern uint32_t syscall_handler(void);
 
 enum intr_status intr_get_status()
 {
@@ -185,6 +187,9 @@ static void idt_desc_init(void)
     int i;
     for (i = 0; i < IDT_DESC_CNT; ++i)
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
+
+    // 单独处理系统调用中断
+    make_idt_desc(&idt[IDT_DESC_CNT - 1], IDT_DESC_ATTR_DPL3, syscall_handler);
     put_str("   idt_desc_init done\n");
 }
 
