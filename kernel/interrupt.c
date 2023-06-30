@@ -90,9 +90,12 @@ static void pic_init(void)
     outb(PIC_S_DATA, 0x02); // ICW3: 设置从片连接到主片的IR2引脚
     outb(PIC_S_DATA, 0x01); // ICW4: 8086模式，正常EOI
 
-    // 打开主片IR0，目前只接受时钟中断和键盘中断
-    outb(PIC_M_DATA, 0xfc); // 主
-    outb(PIC_S_DATA, 0xff); // 从
+    // 打开主片IR0，IRQ0的时钟，IRQ1的键盘和级联从片的IRQ2
+    outb(PIC_M_DATA, 0xf8); // 主
+    // 打开从片IRQ14，接收硬盘控制器的中断
+    outb(PIC_S_DATA, 0xbf); // 从
+
+    // 在中断处理程序中，如果中断源来自从片8259A，发送中断结束信号EOI的时候主片从片都要发送
 
     put_str("   pic_init done\n");
 }

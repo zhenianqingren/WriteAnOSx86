@@ -15,6 +15,20 @@ struct list thread_all_list;     // 所有任务队列
 struct list_elem *thread_tag;    // 保存队列中的线程节点
 struct lock pid_lock;
 
+struct task_struct *idle_thread; // idle线程
+
+// 系统空闲时运行的线程
+static void idle(void *arg)
+{
+    while (1)
+    {
+        thread_block(TASK_BLOCKED);
+        // 执行hlt必须保证在开中断的情况下
+        asm volatile("sti;hlt" ::
+                         : "memory");
+    }
+}
+
 extern void switch_to(struct task_struct *cur, struct task_struct *next);
 
 struct task_struct *running_thread()
@@ -117,9 +131,28 @@ struct task_struct *thread_start(char *name, int prio, thread_func function, voi
     return thread;
 }
 
+// 主动让出cpu 令其他线程执行
+void thread_yield(void)
+{
+    struct task_struct *cur = running_thread();
+    enum intr_status old = intr_disable();
+
+    ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
+    list_append(&thread_ready_list, &cur->general_tag);
+    cur->status = TASK_READY;
+    scheduler();
+
+    intr_set_status(old);
+}
+
 void scheduler()
 {
     ASSERT(intr_get_status() == INTR_OFF);
+    if (list_empty(&thread_ready_list))
+    {
+        thread_unblock(idle_thread);
+    }
+
     struct task_struct *cur = running_thread();
     if (cur->status == TASK_RUNNING)
     {
@@ -165,6 +198,7 @@ void thread_init(void)
     list_init(&thread_all_list);
     lock_init(&pid_lock);
     make_main_thread();
+    idle_thread = thread_start("idle", 10, idle, NULL);
     put_str("thread init done\n");
 }
 

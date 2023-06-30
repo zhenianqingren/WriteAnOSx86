@@ -9,6 +9,7 @@
 #include "process.h"
 #include "../lib/user/syscall.h"
 #include "../lib/stdio.h"
+#include "ide.h"
 
 void k_thread_a(void *arg);
 void k_thread_b(void *arg);
@@ -20,12 +21,9 @@ int main(void)
 {
     put_str("kernel begin\n");
     init_all();
-
     intr_enable();
-    process_execute(user_process_a, "user_process_a");
-    process_execute(user_process_b, "user_process_b");
-    // thread_start("k_thread_a", 31, k_thread_a, "argA");
-    // thread_start("k_thread_b", 31, k_thread_b, "argB");
+    ide_init();
+    
     while (1)
         ;
 

@@ -12,12 +12,14 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
       $(BUILD_DIR)/debug.o $(BUILD_DIR)/string.o $(BUILD_DIR)/memory.o	$(BUILD_DIR)/bitmap.o \
 	  $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o $(BUILD_DIR)/switch.o $(BUILD_DIR)/sync.o	\
 	  $(BUILD_DIR)/console.o $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o \
-	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall_init.o $(BUILD_DIR)/stdio.o
+	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall_init.o $(BUILD_DIR)/stdio.o \
+	  $(BUILD_DIR)/kio.o $(BUILD_DIR)/ide.o
+ 
 HEADERS = device/console.h device/ioqueue.h device/keyboard.h device/timer.h \
 		kernel/debug.h kernel/interrupt.h kernel/global.h kernel/init.h kernel/memory.h \
 		thread/sync.h thread/thread.h userprog/tss.h lib/kernel/print.h lib/kernel/bitmap.h \
 		lib/kernel/list.h lib/kernel/io.h lib/stdint.h lib/string.h lib/user/syscall.h 		\
-		userprog/syscall_init.h userprog/process.h
+		userprog/syscall_init.h userprog/process.h 
 
 $(BUILD_DIR)/main.o: kernel/main.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@
@@ -65,6 +67,12 @@ $(BUILD_DIR)/tss.o: userprog/tss.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/process.o: userprog/process.c $(HEADERS)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/kio.o: lib/kernel/kio.c $(HEADERS)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/ide.o: device/ide.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/syscall.o: lib/user/syscall.c $(HEADERS)

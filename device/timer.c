@@ -14,6 +14,8 @@
 #define READ_WRITE_LATCH 3
 #define PIT_COUNTROL_PORT 0x43
 
+#define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)
+
 uint32_t ticks; // 内核中断开启以来总共的滴答数
 /*将待操作计数器counter_no、读写锁属性rwl、计数器模式counter_mode写入模式控制寄存器并赋予初值counter_value*/
 static void
@@ -46,6 +48,26 @@ static void intr_timer_handler(void)
     {
         cur->ticks--;
     }
+}
+
+// 以tick为单位的sleep
+static void ticks_to_sleep(uint32_t sleep_ticks)
+{
+    uint32_t start_ticks = ticks;
+
+    // 让出cpu
+    while (ticks - start_ticks < sleep_ticks)
+    {
+        thread_yield();
+    }
+}
+
+// 以毫秒为单位的sleep
+void mtime_sleep(uint32_t mtime_seconds)
+{
+    uint32_t sleep_ticks = DIV_ROUND_UP(mtime_seconds, mil_seconds_per_intr);
+    ASSERT(sleep_ticks > 0);
+    ticks_to_sleep(sleep_ticks);
 }
 
 void timer_init()

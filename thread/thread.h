@@ -100,6 +100,7 @@ void thread_init(void);
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct *pthread);
 struct task_struct *running_thread();
+void thread_yield(void);
 
 extern struct list thread_ready_list; // 就绪队列
 extern struct list thread_all_list;   // 所有任务队列

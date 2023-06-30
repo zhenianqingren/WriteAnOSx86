@@ -2,10 +2,6 @@
 #include "./string.h"
 #include "./user/syscall.h"
 
-#define va_start(ap, v) ap = (va_list)&v
-#define va_arg(ap, type) *((type *)(ap += 4))
-#define va_end(ap) ap = NULL
-
 static void itoa(uint32_t value, char **buf_ptr_addr, uint8_t base)
 {
     uint32_t quot = value / base; // 商
