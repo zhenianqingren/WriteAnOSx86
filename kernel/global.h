@@ -96,4 +96,6 @@ struct gdt_desc
 
 #define USER_STACK3_VADDR (0xc0000000 - 0x1000)
 #define default_prio 31
+
+#define MAX_FILES_OPEN_PER_PROC 8
 #endif

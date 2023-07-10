@@ -85,7 +85,18 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
+    pthread->cwd_ino = 0; // 根目录作为默认工作路径
     pthread->pid = alloc_pid();
+
+    pthread->fd_table[0] = 0;
+    pthread->fd_table[1] = 1;
+    pthread->fd_table[2] = 2;
+    uint8_t i = 3;
+    while (i < MAX_FILES_OPEN_PER_PROC)
+    {
+        pthread->fd_table[i] = -1;
+        i++;
+    }
 }
 
 /*

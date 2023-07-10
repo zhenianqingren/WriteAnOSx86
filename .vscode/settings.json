@@ -9,6 +9,15 @@
         "stdio.h": "c",
         "list.h": "c",
         "kio.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "fs.h": "c",
+        "string.h": "c",
+        "ide.h": "c",
+        "sync.h": "c",
+        "dir.h": "c",
+        "inode.h": "c",
+        "super_block.h": "c",
+        "debug.h": "c",
+        "file.h": "c"
     }
 }

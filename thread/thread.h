@@ -84,12 +84,14 @@ struct task_struct
     uint8_t ticks;          // 每次在处理器上执行的时间滴答数
     uint32_t elapsed_ticks; // 执行的总时间
 
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];
     struct list_elem general_tag;  // 用于线程在一般的队列中的结点
     struct list_elem all_list_tag; // 用于线程在thread_all_list中的结点 通过此地址可直接计算出task_struct的地址
 
     uint32_t *pgdir;                    // 进程页表的虚拟地址
     struct virtual_addr userprog_vaddr; // 用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];
+    uint32_t cwd_ino;     // 进程所在的工作目录的ino编号
     uint32_t stack_magic; // 栈的边界标记，检测栈溢出
 };
 

@@ -249,6 +249,9 @@ static bool partition_info(struct list_elem *pelem, int arg)
 void ide_init()
 {
     printk("ide_init start\n");
+
+    memset(channels, 0, sizeof(struct ide_channel) * 2);
+
     uint8_t hd_cnt = *((uint8_t *)(0x475)); // 获取硬盘数量
     ASSERT(hd_cnt > 0);
     channel_cnt = DIV_ROUND_UP(hd_cnt, 2);
@@ -361,7 +364,7 @@ void ide_read(struct disk *hd, uint32_t lba, void *buf, uint32_t sec_cnt)
     uint32_t secs_op;
     uint32_t secs_done = 0;
 
-    while (secs_done < secs_op)
+    while (secs_done < sec_cnt)
     {
         if ((secs_done + 256) <= sec_cnt)
         {
@@ -409,7 +412,7 @@ void ide_write(struct disk *hd, uint32_t lba, void *buf, uint32_t sec_cnt)
     uint32_t secs_op;
     uint32_t secs_done = 0;
 
-    while (secs_done < secs_op)
+    while (secs_done < sec_cnt)
     {
         if ((secs_done + 256) <= sec_cnt)
         {

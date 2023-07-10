@@ -3,6 +3,7 @@
 #include "stdint.h"
 #include "sync.h"
 #include "list.h"
+#include "super_block.h"
 #include "bitmap.h"
 
 /*分区结构*/

@@ -83,7 +83,7 @@ char *strchr(const char *str, const char ch)
 char *strrchr(const char *str, const uint8_t ch)
 {
     ASSERT(str != NULL);
-    const char *last = NULL;
+    char *last = NULL;
     while (*str != 0)
     {
         if (*str == ch)
@@ -92,7 +92,7 @@ char *strrchr(const char *str, const uint8_t ch)
         }
         str++;
     }
-    return (char *)str;
+    return last;
 }
 
 char *strcat(char *dst_, const char *src_)

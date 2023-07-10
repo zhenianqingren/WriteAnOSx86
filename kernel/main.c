@@ -10,6 +10,8 @@
 #include "../lib/user/syscall.h"
 #include "../lib/stdio.h"
 #include "ide.h"
+#include "kio.h"
+#include "fs.h"
 
 void k_thread_a(void *arg);
 void k_thread_b(void *arg);
@@ -21,9 +23,24 @@ int main(void)
 {
     put_str("kernel begin\n");
     init_all();
-    intr_enable();
-    ide_init();
-    
+    // process_execute(user_process_a, "usera");
+    // if (sys_rmdir("/dir1/subdir1") == -1)
+    // {
+    //     printk("fail!!!\n");
+    // }
+    // if (sys_rmdir("/dir1") == -1)
+    // {
+    //     printk("fail!!!\n");
+    // }
+    printk("rmdir /dir1/subdir2 %s\n", sys_rmdir("/dir1/subdir2") == 0 ? "success" : "fail");
+    struct dir *dir = sys_opendir("/dir1");
+    struct dir_entry *dire = NULL;
+    while ((dire = sys_readdir(dir)))
+    {
+        printk("type: %s file name: %s\n", dire->ftype == FT_DIRECTORY ? "directory" : "regular", dire->fn);
+    }
+
+    sys_closedir(dir);
     while (1)
         ;
 
@@ -77,12 +94,17 @@ void user_process_a(void)
     void *addr2 = malloc(2048);
     void *addr3 = malloc(1024);
     printf("a malloc addr: 0x%x 0x%x 0x%x\n", (uint32_t)addr1, (uint32_t)addr2, (uint32_t)addr3);
-    int delay = 10000;
+    int delay = 1000;
     while (delay-- > 0)
         ;
     free(addr1);
     free(addr2);
     free(addr3);
+    int32_t ret = unlink("/file1");
+    if (ret == 0)
+    {
+        printf("done\n");
+    }
     while (1)
         ;
 }
