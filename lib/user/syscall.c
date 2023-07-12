@@ -3,7 +3,7 @@
 // 无参数系统调用 NUMBER是系统调用号
 #define _syscall0(NUMBER)          \
     ({                             \
-        uint32_t ret;              \
+        int ret;              \
         asm volatile("int $0x80"   \
                      : "=a"(ret)   \
                      : "a"(NUMBER) \
@@ -106,11 +106,6 @@ void rewinddir(struct dir *dir)
     _syscall1(SYS_REWINDDIR, dir);
 }
 
-int32_t chdir(const char *path)
-{
-    return _syscall1(SYS_CHDIR, path);
-}
-
 int32_t stat(const char *path, struct stat *buf)
 {
     return _syscall2(SYS_STAT, path, buf);
@@ -119,6 +114,36 @@ int32_t stat(const char *path, struct stat *buf)
 int32_t rmdir(const char *pathname)
 {
     _syscall1(SYS_RMDIR, pathname);
+}
+
+void putchar(char ascii)
+{
+    _syscall1(SYS_PUTCHAR, ascii);
+}
+
+void clear(void)
+{
+    _syscall0(SYS_CLEAR);
+}
+
+int32_t chdir(const char *path)
+{
+    return _syscall1(SYS_CHDIR, path);
+}
+
+void ps(void)
+{
+    _syscall0(SYS_PS);
+}
+
+char *getcwd(char *buf, uint32_t size)
+{
+    return (char *)_syscall2(SYS_GETCWD, buf, size);
+}
+
+pid_t fork(void)
+{
+    return _syscall0(SYS_FORK);
 }
 
 void *malloc(uint32_t size)

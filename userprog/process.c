@@ -17,7 +17,7 @@ void start_process(void *filename_)
     proc_stack->edx = 0;
     proc_stack->esi = 0;
     proc_stack->esp_dummy = 0;
-
+ 
     proc_stack->gs = 0;
     proc_stack->ds = SELECTOR_U_DATA;
     proc_stack->es = SELECTOR_U_DATA;

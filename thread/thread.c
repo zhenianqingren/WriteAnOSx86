@@ -6,6 +6,9 @@
 #include "debug.h"
 #include "interrupt.h"
 #include "process.h"
+#include "stdio.h"
+#include "fs.h"
+#include "file.h"
 
 #define PG_SIZE 4096
 
@@ -59,6 +62,11 @@ static pid_t alloc_pid(void)
     return next_pid;
 }
 
+pid_t fork_pid(void)
+{
+    return alloc_pid();
+}
+
 /*
     初始化线程基本信息
 */
@@ -86,6 +94,7 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
     pthread->cwd_ino = 0; // 根目录作为默认工作路径
+    pthread->ppid = -1;
     pthread->pid = alloc_pid();
 
     pthread->fd_table[0] = 0;
@@ -202,12 +211,15 @@ static void make_main_thread(void)
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
+extern void init(void);
 void thread_init(void)
 {
     put_str("thread init start\n");
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
     lock_init(&pid_lock);
+
+    process_execute(init, "init");
     make_main_thread();
     idle_thread = thread_start("idle", 10, idle, NULL);
     put_str("thread init done\n");
@@ -244,4 +256,74 @@ void thread_unblock(struct task_struct *pthread)
         pthread->status = TASK_READY;
     }
     intr_set_status(old);
+}
+
+// 以填充空格的方式输出buf
+static void pad_print(char *buf, int32_t buf_len, void *ptr, char format)
+{
+    memset(buf, 0, buf_len);
+    uint8_t out_pad_0idx = 0;
+    switch (format)
+    {
+    case 's':
+        out_pad_0idx = sprintf(buf, "%s", ptr);
+        break;
+    case 'd':
+        out_pad_0idx = sprintf(buf, "%d", *((int16_t *)ptr));
+    case 'x':
+        out_pad_0idx = sprintf(buf, "%x", *((uint32_t *)ptr));
+    default:
+        break;
+    }
+    while (out_pad_0idx < buf_len)
+    {
+        buf[out_pad_0idx] = ' ';
+        out_pad_0idx++;
+    }
+    sys_write(stdout, buf, buf_len - 1);
+}
+
+// 用于在list_traversal函数中的回调函数，用于针对线程队列的处理
+static bool elem2thread_info(struct list_elem *elem, int arg)
+{
+    struct task_struct *pthread = elem2entry(struct task_struct, all_list_tag, elem);
+    char out_pad[16] = {0};
+    pad_print(out_pad, 16, &pthread->pid, 'd');
+    switch (pthread->status)
+    {
+    case 0:
+        pad_print(out_pad, 16, "RUNNING", 's');
+        break;
+    case 1:
+        pad_print(out_pad, 16, "READY", 's');
+        break;
+    case 2:
+        pad_print(out_pad, 16, "BLOCKED", 's');
+        break;
+    case 3:
+        pad_print(out_pad, 16, "WAITING", 's');
+        break;
+    case 4:
+        pad_print(out_pad, 16, "HANGING", 's');
+        break;
+    case 5:
+        pad_print(out_pad, 16, "DIED", 's');
+        break;
+    default:
+        break;
+    }
+    pad_print(out_pad, 16, &pthread->ticks, 'x');
+    memset(out_pad, 0, 16);
+    ASSERT(strlen(pthread->name) < 17);
+    memcpy(out_pad, pthread->name, strlen(pthread->name));
+    strcat(out_pad, "\n");
+    sys_write(stdout, out_pad, strlen(out_pad));
+    return false; // 迎合主调函数list_traversal
+}
+
+void sys_ps(void)
+{
+    char *ps_title = "PID             PPID            STAT            TICKS           COMMAND\n";
+    sys_write(stdout, ps_title, strlen(ps_title));
+    list_traversal(&thread_all_list, elem2thread_info, 0);
 }

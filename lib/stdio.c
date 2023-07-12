@@ -1,6 +1,7 @@
 #include "./stdio.h"
 #include "./string.h"
 #include "./user/syscall.h"
+#include "console.h"
 
 static void itoa(uint32_t value, char **buf_ptr_addr, uint8_t base)
 {
@@ -75,8 +76,8 @@ uint32_t printf(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    char buf[1024];
-    memset(buf, 0, 1024);
+    char buf[256];
+    memset(buf, 0, 256);
     vsprintf(buf, format, args);
     va_end(args);
     return write(1, buf, strlen(buf));
@@ -90,4 +91,15 @@ uint32_t sprintf(char *buf, const char *format, ...)
     ret = vsprintf(buf, format, args);
     va_end(args);
     return ret;
+}
+
+void sys_put_char(char ch)
+{
+    console_put_char(ch);
+}
+
+extern void cls_screen(void);
+void sys_clear(void)
+{
+    cls_screen();
 }

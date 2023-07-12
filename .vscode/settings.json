@@ -18,6 +18,7 @@
         "inode.h": "c",
         "super_block.h": "c",
         "debug.h": "c",
-        "file.h": "c"
+        "file.h": "c",
+        "fork.h": "c"
     }
 }

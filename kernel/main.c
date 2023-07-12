@@ -10,6 +10,7 @@
 #include "../lib/user/syscall.h"
 #include "../lib/stdio.h"
 #include "ide.h"
+#include "shell.h"
 #include "kio.h"
 #include "fs.h"
 
@@ -23,28 +24,24 @@ int main(void)
 {
     put_str("kernel begin\n");
     init_all();
-    // process_execute(user_process_a, "usera");
-    // if (sys_rmdir("/dir1/subdir1") == -1)
-    // {
-    //     printk("fail!!!\n");
-    // }
-    // if (sys_rmdir("/dir1") == -1)
-    // {
-    //     printk("fail!!!\n");
-    // }
-    printk("rmdir /dir1/subdir2 %s\n", sys_rmdir("/dir1/subdir2") == 0 ? "success" : "fail");
-    struct dir *dir = sys_opendir("/dir1");
-    struct dir_entry *dire = NULL;
-    while ((dire = sys_readdir(dir)))
-    {
-        printk("type: %s file name: %s\n", dire->ftype == FT_DIRECTORY ? "directory" : "regular", dire->fn);
-    }
-
-    sys_closedir(dir);
     while (1)
         ;
-
     return 0;
+}
+
+void init(void)
+{
+    uint32_t ret = fork();
+    if (ret)
+    {
+        printf("parent %d get children %d\n", getpid(), ret);
+    }
+    else
+    {
+        shell();
+    }
+    while (1)
+        ;
 }
 
 void k_thread_a(void *arg)

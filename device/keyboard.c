@@ -193,6 +193,11 @@ static void intr_keyboard_handler(void)
         }
         uint8_t index = (scancode & 0xff);
         char ch = keymap[index][shift];
+
+        if ((ctrl_last && ch == 'l') || (ctrl_last && ch == 'u'))
+        {
+            ch -= 'a';
+        }
         if (ch)
         {
             /*
@@ -200,7 +205,7 @@ static void intr_keyboard_handler(void)
             */
             if (!ioqueue_full(&kbd_buf))
             {
-                put_char(ch);
+                // put_char(ch);
                 ioqueue_push(&kbd_buf, ch);
             }
             return;

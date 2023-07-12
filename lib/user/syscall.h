@@ -20,7 +20,12 @@ enum SYSCALL_NR
     SYS_REWINDDIR,
     SYS_RMDIR,
     SYS_CHDIR,
-    SYS_STAT
+    SYS_STAT,
+    SYS_FORK,
+    SYS_PUTCHAR,
+    SYS_CLEAR,
+    SYS_GETCWD,
+    SYS_PS
 };
 
 uint32_t getpid(void);
@@ -37,6 +42,10 @@ void rewinddir(struct dir *dir);
 int32_t chdir(const char *path);
 int32_t stat(const char *path, struct stat *buf);
 int32_t rmdir(const char *pathname);
+pid_t fork(void);
+void putchar(char ascii);
+void clear(void);
 void *malloc(uint32_t size);
 void free(void *);
+char *getcwd(char *buf, uint32_t size);
 #endif
