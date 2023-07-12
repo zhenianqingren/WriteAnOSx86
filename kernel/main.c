@@ -32,6 +32,9 @@ int main(void)
     // {
     //     printk("fail!!!\n");
     // }
+    printk("mkdir /dir1 %s\n", sys_mkdir("/dir1") == 0 ? "done" : "fail");
+    printk("mkdir /dir1/subdir1 %s\n", sys_mkdir("/dir1/subdir1") == 0 ? "done" : "fail");
+    printk("mkdir /dir1/subdir2 %s\n", sys_mkdir("/dir1/subdir2") == 0 ? "done" : "fail");
     printk("rmdir /dir1/subdir2 %s\n", sys_rmdir("/dir1/subdir2") == 0 ? "success" : "fail");
     struct dir *dir = sys_opendir("/dir1");
     struct dir_entry *dire = NULL;
@@ -41,6 +44,7 @@ int main(void)
     }
 
     sys_closedir(dir);
+    process_execute(user_process_a, "usera");
     while (1)
         ;
 
@@ -104,6 +108,10 @@ void user_process_a(void)
     if (ret == 0)
     {
         printf("done\n");
+    }
+    else
+    {
+        printf("file not exist\n");
     }
     while (1)
         ;

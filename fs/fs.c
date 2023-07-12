@@ -622,12 +622,12 @@ int32_t sys_mkdir(const char *dn)
     // 同步父目录的inode
     memset(io_buf, 0, 1024);
     inode_sync(cur_part, parent->inode, io_buf);
-    printk("parent: NO.%d , size:%d\n", parent->inode->ino, parent->inode->isiz);
+    // printk("parent: NO.%d , size:%d\n", parent->inode->ino, parent->inode->isiz);
 
     // 同步新创建的inode
     memset(io_buf, 0, 1024);
     inode_sync(cur_part, &inode, io_buf);
-    printk("inode: NO.%d created , blk_lba:%d size:%d\n", ino, blk_lba,inode.isiz);
+    // printk("inode: NO.%d created , blk_lba:%d size:%d\n", ino, blk_lba,inode.isiz);
 
     // 同步inode位图
     bitmap_sync(cur_part, ino, INODE_BITMAP);

@@ -182,36 +182,36 @@ bool sync_dire(struct dir *parent, struct dir_entry *pdire, void *io_buf)
         }
         // 若已经存在，将其读入，在扇区内寻找空闲目录项
         ide_read(cur_part->my_disk, all_blocks[idx], io_buf, 1);
-        uint8_t test = 0;
-        printk("Sector:%d After Read\n", all_blocks[idx]);
-        while (true)
-        {
-            if (((struct dir_entry *)io_buf + test)->ftype == FT_UNKNOWN)
-            {
-                break;
-            }
-            printk("NO.%d type: %s name: %s\n", test, (dire + test)->ftype == FT_DIRECTORY ? "directory" : "file", (dire + test)->fn);
-            test++;
-        }
+        // uint8_t test = 0;
+        // printk("Sector:%d After Read\n", all_blocks[idx]);
+        // while (true)
+        // {
+        //     if (((struct dir_entry *)io_buf + test)->ftype == FT_UNKNOWN)
+        //     {
+        //         break;
+        //     }
+        //     printk("NO.%d type: %s name: %s\n", test, (dire + test)->ftype == FT_DIRECTORY ? "directory" : "file", (dire + test)->fn);
+        //     test++;
+        // }
         uint8_t dire_idx = 0;
         while (dire_idx < dires)
         {
             if ((dire + dire_idx)->ftype == FT_UNKNOWN)
             {
                 // 初始化或者删除文件后都会将其置成UNKNOWN
-                printk("sync NO.%d type: %s name: %s\n", dire_idx, pdire->ftype == FT_DIRECTORY ? "directory" : "file", pdire->fn);
+                // printk("sync NO.%d type: %s name: %s\n", dire_idx, pdire->ftype == FT_DIRECTORY ? "directory" : "file", pdire->fn);
                 memcpy(dire + dire_idx, pdire, dire_siz);
-                test = 0;
-                printk("Sector:%d Before Sync\n", all_blocks[idx]);
-                while (true)
-                {
-                    if (((struct dir_entry *)io_buf + test)->ftype == FT_UNKNOWN)
-                    {
-                        break;
-                    }
-                    printk("NO.%d type: %s name: %s\n", test, (dire + test)->ftype == FT_DIRECTORY ? "directory" : "file", (dire + test)->fn);
-                    test++;
-                }
+                // test = 0;
+                // printk("Sector:%d Before Sync\n", all_blocks[idx]);
+                // while (true)
+                // {
+                //     if (((struct dir_entry *)io_buf + test)->ftype == FT_UNKNOWN)
+                //     {
+                //         break;
+                //     }
+                //     printk("NO.%d type: %s name: %s\n", test, (dire + test)->ftype == FT_DIRECTORY ? "directory" : "file", (dire + test)->fn);
+                //     test++;
+                // }
                 ide_write(cur_part->my_disk, all_blocks[idx], io_buf, 1);
                 dir_inode->isiz += dire_siz;
                 return true;
