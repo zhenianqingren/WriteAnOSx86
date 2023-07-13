@@ -92,6 +92,7 @@ struct task_struct
     struct virtual_addr userprog_vaddr; // 用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];
     uint32_t cwd_ino;     // 进程所在的工作目录的ino编号
+    pid_t ppid;
     uint32_t stack_magic; // 栈的边界标记，检测栈溢出
 };
 
@@ -103,6 +104,7 @@ void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct *pthread);
 struct task_struct *running_thread();
 void thread_yield(void);
+pid_t fork_pid(void);
 
 extern struct list thread_ready_list; // 就绪队列
 extern struct list thread_all_list;   // 所有任务队列

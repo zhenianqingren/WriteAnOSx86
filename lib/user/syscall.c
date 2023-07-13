@@ -101,6 +101,11 @@ struct dir_entry *readdir(struct dir *dir)
     return _syscall1(SYS_READDIR, dir);
 }
 
+pid_t fork(void)
+{
+    return _syscall0(SYS_FORK);
+}
+
 void rewinddir(struct dir *dir)
 {
     _syscall1(SYS_REWINDDIR, dir);

@@ -87,7 +87,7 @@ void init_thread(struct task_struct *pthread, char *name, int prio)
     pthread->pgdir = NULL;
     pthread->cwd_ino = 0; // 根目录作为默认工作路径
     pthread->pid = alloc_pid();
-
+    pthread->ppid = -1;
     pthread->fd_table[0] = 0;
     pthread->fd_table[1] = 1;
     pthread->fd_table[2] = 2;
@@ -202,12 +202,14 @@ static void make_main_thread(void)
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
+extern void init(void);
 void thread_init(void)
 {
     put_str("thread init start\n");
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
     lock_init(&pid_lock);
+    process_execute(init, "init");
     make_main_thread();
     idle_thread = thread_start("idle", 10, idle, NULL);
     put_str("thread init done\n");
@@ -244,4 +246,9 @@ void thread_unblock(struct task_struct *pthread)
         pthread->status = TASK_READY;
     }
     intr_set_status(old);
+}
+
+pid_t fork_pid(void)
+{
+    return alloc_pid();
 }

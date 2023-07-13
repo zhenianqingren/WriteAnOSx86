@@ -23,32 +23,26 @@ int main(void)
 {
     put_str("kernel begin\n");
     init_all();
-    // process_execute(user_process_a, "usera");
-    // if (sys_rmdir("/dir1/subdir1") == -1)
-    // {
-    //     printk("fail!!!\n");
-    // }
-    // if (sys_rmdir("/dir1") == -1)
-    // {
-    //     printk("fail!!!\n");
-    // }
-    printk("mkdir /dir1 %s\n", sys_mkdir("/dir1") == 0 ? "done" : "fail");
-    printk("mkdir /dir1/subdir1 %s\n", sys_mkdir("/dir1/subdir1") == 0 ? "done" : "fail");
-    printk("mkdir /dir1/subdir2 %s\n", sys_mkdir("/dir1/subdir2") == 0 ? "done" : "fail");
-    printk("rmdir /dir1/subdir2 %s\n", sys_rmdir("/dir1/subdir2") == 0 ? "success" : "fail");
-    struct dir *dir = sys_opendir("/dir1");
-    struct dir_entry *dire = NULL;
-    while ((dire = sys_readdir(dir)))
-    {
-        printk("type: %s file name: %s\n", dire->ftype == FT_DIRECTORY ? "directory" : "regular", dire->fn);
-    }
 
-    sys_closedir(dir);
-    process_execute(user_process_a, "usera");
     while (1)
         ;
 
     return 0;
+}
+
+void init(void)
+{
+    pid_t pid;
+    if ((pid = fork()) == 0)
+    {
+        printf("child created!\n");
+    }
+    else
+    {
+        printf("parent: %d create child: %d\n", getpid(), pid);
+    }
+    while (1)
+        ;
 }
 
 void k_thread_a(void *arg)

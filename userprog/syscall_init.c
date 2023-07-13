@@ -4,6 +4,7 @@
 #include "console.h"
 #include "memory.h"
 #include "fs.h"
+#include "fork.h"
 
 #define syscall_nr 32
 typedef void *syscall;
@@ -36,5 +37,6 @@ void syscall_init(void)
     syscall_table[SYS_RMDIR] = sys_rmdir;
     syscall_table[SYS_CHDIR] = sys_chdir;
     syscall_table[SYS_STAT] = sys_stat;
+    syscall_table[SYS_FORK] = sys_fork;
     put_str("syscall init end\n");
 }
