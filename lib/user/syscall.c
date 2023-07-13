@@ -106,6 +106,16 @@ pid_t fork(void)
     return _syscall0(SYS_FORK);
 }
 
+void putchar(char ch)
+{
+    _syscall1(SYS_PUTCHAR, ch);
+}
+
+void clear(void)
+{
+    _syscall0(SYS_CLEAR);
+}
+
 void rewinddir(struct dir *dir)
 {
     _syscall1(SYS_REWINDDIR, dir);

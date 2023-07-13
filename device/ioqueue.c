@@ -32,7 +32,7 @@ int ioqueue_empty(struct ioqueue *queue)
  */
 static void ioqueue_wait(struct task_struct **waiter)
 {
-    ASSERT(waiter != NULL && *waiter != NULL);
+    ASSERT(waiter != NULL && *waiter == NULL);
     *waiter = running_thread();
     thread_block(TASK_BLOCKED);
 }

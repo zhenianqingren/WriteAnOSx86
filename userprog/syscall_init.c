@@ -16,6 +16,16 @@ uint32_t sys_getpid(void)
     return running_thread()->pid;
 }
 
+void sys_putchar(char ch)
+{
+    console_put_char((uint8_t)ch);
+}
+
+void sys_clear(void)
+{
+    cls_screen();
+}
+
 // 初始化系统调用
 void syscall_init(void)
 {
@@ -38,5 +48,7 @@ void syscall_init(void)
     syscall_table[SYS_CHDIR] = sys_chdir;
     syscall_table[SYS_STAT] = sys_stat;
     syscall_table[SYS_FORK] = sys_fork;
+    syscall_table[SYS_CLEAR] = sys_clear;
+    syscall_table[SYS_PUTCHAR] = sys_putchar;
     put_str("syscall init end\n");
 }

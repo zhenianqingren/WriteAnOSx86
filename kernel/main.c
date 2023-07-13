@@ -12,6 +12,7 @@
 #include "ide.h"
 #include "kio.h"
 #include "fs.h"
+#include "shell.h"
 
 void k_thread_a(void *arg);
 void k_thread_b(void *arg);
@@ -35,11 +36,11 @@ void init(void)
     pid_t pid;
     if ((pid = fork()) == 0)
     {
-        printf("child created!\n");
+        shell();
     }
     else
     {
-        printf("parent: %d create child: %d\n", getpid(), pid);
+        // printf("parent: %d create child: %d\n", getpid(), pid);
     }
     while (1)
         ;

@@ -19,6 +19,7 @@ struct ioqueue
     int32_t tail;
 };
 
+extern struct ioqueue kbd_buf;
 void ioqueue_init(struct ioqueue *queue);
 int ioqueue_full(struct ioqueue *queue);
 char ioqueue_pop(struct ioqueue *queue);

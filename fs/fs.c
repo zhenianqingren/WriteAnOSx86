@@ -6,6 +6,7 @@
 #include "file.h"
 #include "debug.h"
 #include "console.h"
+#include "ioqueue.h"
 
 extern struct ide_channel channels[2];
 extern struct list partition_list;
@@ -434,14 +435,30 @@ int32_t sys_write(int32_t fd, const void *buf, uint32_t count)
 
 int32_t sys_read(int32_t fd, void *buf, uint32_t count)
 {
-    if (fd < 0)
+    ASSERT(buf != NULL);
+    int32_t ret = -1;
+    if (fd < 0 || fd == stdout || fd == stderr)
     {
         printk("sys_read: fd error!!!\n");
-        return -1;
     }
-    ASSERT(buf != NULL);
-    fd = fd_locl2glob(fd);
-    return fread(&file_table[fd], buf, count);
+    else if (fd == stdin)
+    {
+        char *bufp = (char *)buf;
+        uint32_t bread = 0;
+        while (bread < count)
+        {
+            *bufp = ioqueue_pop(&kbd_buf);
+            bread++;
+            bufp++;
+        }
+        ret = bread == 0 ? -1 : (int32_t)bread;
+    }
+    else
+    {
+        fd = fd_locl2glob(fd);
+        ret = fread(&file_table[fd], buf, count);
+    }
+    return ret;
 }
 
 // 重置文件的读写指针
