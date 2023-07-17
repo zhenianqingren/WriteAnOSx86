@@ -25,10 +25,11 @@ enum f_type
 /*打开文件的选项*/
 enum oflags
 {
-    O_RDONLY,    // 只读
-    O_WRONLY,    // 只写
-    O_RDWR,      // 读写
-    O_CREATE = 4 // 创建
+    O_RDONLY,     // 只读
+    O_WRONLY,     // 只写
+    O_RDWR,       // 读写
+    O_CREATE = 4, // 创建
+    PIPE = 64
 };
 
 /*文件读写位置偏移量*/
@@ -72,4 +73,6 @@ void sys_rewinddir(struct dir *dir);
 int32_t sys_chdir(const char *path);
 int32_t sys_stat(const char *path, struct stat *buf);
 int32_t sys_rmdir(const char *pathname);
+char *sys_getcwd(char *buf, uint32_t size);
+int32_t fd_locl2glob(uint32_t locl_fd);
 #endif

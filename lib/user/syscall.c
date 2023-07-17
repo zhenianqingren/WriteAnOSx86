@@ -126,7 +126,7 @@ int32_t chdir(const char *path)
     return _syscall1(SYS_CHDIR, path);
 }
 
-int32_t stat(const char *path, struct stat *buf)
+int32_t fstat(const char *path, struct stat *buf)
 {
     return _syscall2(SYS_STAT, path, buf);
 }
@@ -134,6 +134,11 @@ int32_t stat(const char *path, struct stat *buf)
 int32_t rmdir(const char *pathname)
 {
     _syscall1(SYS_RMDIR, pathname);
+}
+
+int32_t execv(const char *path, const char *argv[])
+{
+    return _syscall2(SYS_EXECV, path, argv);
 }
 
 void *malloc(uint32_t size)
@@ -144,4 +149,29 @@ void *malloc(uint32_t size)
 void free(void *ptr)
 {
     _syscall1(SYS_FREE, ptr);
+}
+
+char *getcwd(char *buf, uint32_t size)
+{
+    return (char *)_syscall2(SYS_GETCWD, buf, size);
+}
+
+pid_t wait(int16_t *status)
+{
+    return _syscall1(SYS_WAIT, status);
+}
+
+void exit(int32_t status)
+{
+    _syscall1(SYS_EXIT, status);
+}
+
+void ps(void)
+{
+    _syscall0(SYS_PS);
+}
+
+int32_t pipe(int32_t pipefd[2])
+{
+    return _syscall1(SYS_PIPE, pipefd);
 }

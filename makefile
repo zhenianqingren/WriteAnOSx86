@@ -14,14 +14,16 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	  $(BUILD_DIR)/console.o $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o \
 	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall_init.o $(BUILD_DIR)/stdio.o \
 	  $(BUILD_DIR)/kio.o $(BUILD_DIR)/ide.o $(BUILD_DIR)/fs.o $(BUILD_DIR)/dir.o $(BUILD_DIR)/inode.o $(BUILD_DIR)/file.o \
-	  $(BUILD_DIR)/fork.o $(BUILD_DIR)/shell.o
+	  $(BUILD_DIR)/fork.o $(BUILD_DIR)/shell.o $(BUILD_DIR)/buildin_cmd.o $(BUILD_DIR)/exec.o $(BUILD_DIR)/process_ctl.o \
+	  $(BUILD_DIR)/pipe.o
  
 HEADERS = device/console.h device/ioqueue.h device/keyboard.h device/timer.h \
 		kernel/debug.h kernel/interrupt.h kernel/global.h kernel/init.h kernel/memory.h \
 		thread/sync.h thread/thread.h userprog/tss.h lib/kernel/print.h lib/kernel/bitmap.h \
 		lib/kernel/list.h lib/kernel/io.h lib/stdint.h lib/string.h lib/user/syscall.h 		\
 		userprog/syscall_init.h userprog/process.h fs/fs.h fs/dir.h fs/inode.h fs/super_block.h \
-		userprog/fork.h shell/shell.h
+		userprog/fork.h shell/shell.h shell/buildin_cmd.h userprog/exec.h userprog/process_ctl.h \
+		shell/pipe.h
 
 $(BUILD_DIR)/main.o: kernel/main.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@
@@ -80,10 +82,13 @@ $(BUILD_DIR)/ide.o: device/ide.c $(HEADERS)
 $(BUILD_DIR)/syscall.o: lib/user/syscall.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@		
 
-$(BUILD_DIR)/shell.o: shell/shell.c $(HEADERS)
+$(BUILD_DIR)/process_ctl.o: userprog/process_ctl.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/syscall_init.o: userprog/syscall_init.c $(HEADERS)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/pipe.o: shell/pipe.c $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/fork.o: userprog/fork.c $(HEADERS)
@@ -112,6 +117,15 @@ $(BUILD_DIR)/print.o: lib/kernel/print.S
 
 $(BUILD_DIR)/switch.o: kernel/switch.S
 	$(AS) $(ASFLAGS) $< -o $@
+
+$(BUILD_DIR)/shell.o: shell/shell.c $(HEADERS)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/exec.o: userprog/exec.c $(HEADERS)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/buildin_cmd.o: shell/buildin_cmd.c $(HEADERS)
+	$(CC) $(CFLAGS) $< -o $@
 ##############    链接所有目标文件    #############
 $(BUILD_DIR)/kernel.bin: $(OBJS)
 	$(LD) $(LDFLAGS) $^ -o $@

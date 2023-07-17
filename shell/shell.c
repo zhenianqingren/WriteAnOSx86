@@ -2,10 +2,11 @@
 #include "stdio.h"
 #include "../lib/stdint.h"
 #include "debug.h"
-#include "syscall.h"
+#include "../lib/user/syscall.h"
 #include "file.h"
 #include "fs.h"
 #include "../lib/string.h"
+#include "buildin_cmd.h"
 #define CMD_LEN 128   // 命令行输入最大字符数为128
 #define MAX_ARG_NR 16 // 加上命令名外最多支持15个参数
 
@@ -13,6 +14,7 @@
 static char cmd_line[CMD_LEN] = {0};
 // 存储当前目录
 char cwd_cache[64] = {0};
+// 去掉.和..后的绝对路径
 
 // 输出提示符
 void print_prompt(void)
@@ -111,14 +113,19 @@ static void readline(char *buf, int32_t cnt)
     printf("readline: cannot find entry in the cmdline, max num of char is 128!\n");
 }
 
+char final[32] = {0};
 void shell(void)
 {
+    static const char *buildin_cmd[] = {"pwd", "cd", "ls", "ps", "clear", "mkdir", "rmdir", "rm"};
+    static entry_point cmd_entry[] = {buildin_pwd, buildin_cd, buildin_ls, buildin_ps, buildin_clear, buildin_mkdir, buildin_rmdir, buildin_rm};
     clear();
     cwd_cache[0] = '/';
+    cwd_cache[1] = 0;
     while (1)
     {
         print_prompt();
         memset(cmd_line, 0, CMD_LEN);
+        memset(final, 0, 32);
         readline(cmd_line, CMD_LEN);
         if (cmd_line[0] == 0)
         {
@@ -131,12 +138,50 @@ void shell(void)
             printf("count of arguments exceed!!!\n");
             continue;
         }
-        // test
-        int32_t arg_idx = 0;
-        while (arg_idx < argc)
+        int8_t i;
+        void *ret;
+        for (i = 0; i < BUILDIN_CNT; i++)
         {
-            printf("%s\n", argv[arg_idx]);
-            arg_idx++;
+            if (!strcmp(buildin_cmd[i], argv[0]))
+            {
+                ret = cmd_entry[i](argc, argv);
+                if (CD == i)
+                {
+                    strcpy(cwd_cache, final);
+                }
+                break;
+            }
+        }
+        if (i == BUILDIN_CNT)
+        {
+            pid_t pid;
+            if ((pid = fork()))
+            {
+                int16_t status;
+                int32_t cpid = wait(&status);
+                ASSERT(cpid != -1);
+                printf("child pid: %d with status %d\n", cpid, status);
+            }
+            else
+            {
+                make_clear_abs_path(argv[0], final);
+                argv[0] = final;
+                // 先判断文件是否存在
+                struct stat stat;
+                memset(&stat, 0, sizeof(struct stat));
+                if (fstat(argv[0], &stat) == -1)
+                {
+                    printf("shell: cannot access %s: No such file or directory\n", argv[0]);
+                    exit(-1);
+                }
+                else
+                {
+                    if (execv(argv[0], argv) == -1)
+                    {
+                        exit(-1);
+                    }
+                }
+            }
         }
     }
     PANIC("shell: not allowed to here!\n");

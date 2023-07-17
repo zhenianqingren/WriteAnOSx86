@@ -20,6 +20,8 @@
         "debug.h": "c",
         "file.h": "c",
         "console.h": "c",
-        "syscall_init.h": "c"
+        "syscall_init.h": "c",
+        "fork.h": "c",
+        "process_ctl.h": "c"
     }
 }

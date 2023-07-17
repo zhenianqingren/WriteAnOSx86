@@ -1,7 +1,7 @@
 #ifndef __LIB_USER_SCSCALL_H
 #define __LIB_USER_SCSCALL_H
-#include "stdint.h"
-#include "dir.h"
+#include "../stdint.h"
+#include "../../fs/dir.h"
 enum SYSCALL_NR
 {
     SYS_GETPID,
@@ -23,7 +23,13 @@ enum SYSCALL_NR
     SYS_STAT,
     SYS_FORK,
     SYS_CLEAR,
-    SYS_PUTCHAR
+    SYS_PUTCHAR,
+    SYS_PS,
+    SYS_GETCWD,
+    SYS_EXECV,
+    SYS_WAIT,
+    SYS_EXIT,
+    SYS_PIPE
 };
 
 uint32_t getpid(void);
@@ -38,11 +44,18 @@ int32_t closedir(struct dir *dir);
 struct dir_entry *readdir(struct dir *dir);
 void rewinddir(struct dir *dir);
 int32_t chdir(const char *path);
-int32_t stat(const char *path, struct stat *buf);
+int32_t fstat(const char *path, struct stat *buf);
 int32_t rmdir(const char *pathname);
 void putchar(char ch);
 void clear(void);
 void *malloc(uint32_t size);
 void free(void *);
 pid_t fork(void);
+char *getcwd(char *buf, uint32_t size);
+void ps(void);
+int32_t mkdir(const char *dn);
+int32_t execv(const char *path, const char *argv[]);
+pid_t wait(int16_t *status);
+void exit(int32_t status);
+int32_t pipe(int32_t pipefd[2]);
 #endif

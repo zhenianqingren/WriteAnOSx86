@@ -3,6 +3,7 @@
 #include "global.h"
 #include "file.h"
 #include "string.h"
+#include "pipe.h"
 
 extern void intr_exit(void);
 
@@ -27,7 +28,7 @@ static int32_t copy_pcb(struct task_struct *chld, struct task_struct *parent)
     // 将子进程的虚拟地址池指向自己的位图
     memcpy(vaddr_btmp, chld->userprog_vaddr.vaddr_bitmap.bits, btmp_pg_cnt * PG_SIZE);
     chld->userprog_vaddr.vaddr_bitmap.bits = vaddr_btmp;
-    ASSERT(strlen(chld->name) < 11);
+    ASSERT(strlen(chld->name) < 27);
     strcat(chld->name, "_fork");
     return 0;
 }
@@ -98,7 +99,14 @@ static void update_iopen_cnt(struct task_struct *pthread)
         ASSERT(glob_fd < MAX_FILES_OPEN);
         if (glob_fd != -1)
         {
-            file_table[glob_fd].fd_inode->iopen_cnt++;
+            if (ispipe(locl_fd))
+            {
+                file_table[glob_fd].fd_pos++;
+            }
+            else
+            {
+                file_table[glob_fd].fd_inode->iopen_cnt++;
+            }
         }
         locl_fd++;
     }

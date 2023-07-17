@@ -79,7 +79,7 @@ struct task_struct
     uint32_t *self_kstack; // 每个内核级线程都有自己的内核栈
     pid_t pid;
     enum task_status status;
-    char name[16];
+    char name[32];
     uint8_t priority;
     uint8_t ticks;          // 每次在处理器上执行的时间滴答数
     uint32_t elapsed_ticks; // 执行的总时间
@@ -92,7 +92,8 @@ struct task_struct
     struct virtual_addr userprog_vaddr; // 用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];
     uint32_t cwd_ino;     // 进程所在的工作目录的ino编号
-    pid_t ppid;
+    pid_t ppid;           // 父进程pid
+    int8_t exit_status;   // 退出时的状态
     uint32_t stack_magic; // 栈的边界标记，检测栈溢出
 };
 
@@ -105,6 +106,9 @@ void thread_unblock(struct task_struct *pthread);
 struct task_struct *running_thread();
 void thread_yield(void);
 pid_t fork_pid(void);
+void sys_ps(void);
+void thread_exit(struct task_struct *pthread, bool schedule);
+struct task_struct *pid2thread(pid_t pid);
 
 extern struct list thread_ready_list; // 就绪队列
 extern struct list thread_all_list;   // 所有任务队列

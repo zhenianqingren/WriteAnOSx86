@@ -351,7 +351,7 @@ int32_t fwrite(struct file *f, const void *buf, uint32_t cnt)
                 f->fd_inode->i_sects[blk_idx] = blk_lba;
                 all_blocks[blk_idx] = blk_lba;
                 // 每分配一个块 将块位图同步到硬盘
-                blk_bitmap_idx = blk_idx - cur_part->sb->data_start_lba;
+                blk_bitmap_idx = blk_lba - cur_part->sb->data_start_lba;
                 bitmap_sync(cur_part, blk_bitmap_idx, BLOCK_BITMAP);
                 blk_idx++;
             }
@@ -454,13 +454,15 @@ int32_t fwrite(struct file *f, const void *buf, uint32_t cnt)
     inode_sync(cur_part, f->fd_inode, io_buf);
     sys_free(all_blocks);
     sys_free(io_buf);
+
+    printk("current file with size:%d\n", f->fd_inode->isiz);
     return bwritten;
 }
 
 int32_t fread(struct file *f, void *buf, uint32_t cnt)
 {
     uint8_t *buf_dst = (uint8_t *)buf;
-    uint32_t siz = cnt;
+    uint32_t siz = cnt > f->fd_inode->isiz ? f->fd_inode->isiz : cnt;
     uint32_t left = cnt;
     // 如果要读取的字节量超过文件可读的剩余量
     if ((f->fd_pos + cnt) > f->fd_inode->isiz)

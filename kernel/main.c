@@ -9,7 +9,6 @@
 #include "process.h"
 #include "../lib/user/syscall.h"
 #include "../lib/stdio.h"
-#include "ide.h"
 #include "kio.h"
 #include "fs.h"
 #include "shell.h"
@@ -24,7 +23,6 @@ int main(void)
 {
     put_str("kernel begin\n");
     init_all();
-
     while (1)
         ;
 
@@ -40,10 +38,15 @@ void init(void)
     }
     else
     {
-        // printf("parent: %d create child: %d\n", getpid(), pid);
+        int16_t status;
+        pid_t cpid;
+        while (1)
+        {
+            cpid = wait(&status);
+            printf("init: handle child %d with status %d\n", cpid, status);
+        }
     }
-    while (1)
-        ;
+    PANIC("init: error location\n");
 }
 
 void k_thread_a(void *arg)

@@ -87,3 +87,17 @@ void ioqueue_push(struct ioqueue *queue, char byte)
         wakeup(&queue->consumer);
     }
 }
+
+uint32_t ioqueue_len(struct ioqueue *queue)
+{
+    uint32_t len = 0;
+    if (queue->tail > queue->head)
+    {
+        len = queue->tail - queue->head;
+    }
+    else
+    {
+        len = BUFSIZ - queue->head + queue->tail;
+    }
+    return len;
+}

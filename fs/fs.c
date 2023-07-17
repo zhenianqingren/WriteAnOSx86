@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "console.h"
 #include "ioqueue.h"
+#include "pipe.h"
 
 extern struct ide_channel channels[2];
 extern struct list partition_list;
@@ -385,7 +386,7 @@ int32_t sys_open(const char *pathname, uint8_t flags)
 }
 
 // 文件描述符转化为文件表下标
-static int32_t fd_locl2glob(uint32_t locl_fd)
+int32_t fd_locl2glob(uint32_t locl_fd)
 {
     struct task_struct *cur = running_thread();
     int32_t glob = cur->fd_table[locl_fd];
@@ -397,10 +398,23 @@ static int32_t fd_locl2glob(uint32_t locl_fd)
 int32_t sys_close(int32_t locl_fd)
 {
     int32_t ret = -1;
+    int32_t fd;
     if (locl_fd > 2)
     {
-        int32_t fd = fd_locl2glob(locl_fd);
-        ret = fclose(&file_table[fd]);
+        fd = fd_locl2glob(locl_fd);
+        if (ispipe(locl_fd))
+        {
+            if (--file_table[fd].fd_pos == 0)
+            {
+                mfree_page(PF_KERNEL, (void *)file_table[fd].fd_inode, 1);
+                file_table[fd].fd_inode = NULL;
+            }
+            ret = 0;
+        }
+        else
+        {
+            ret = fclose(&file_table[fd]);
+        }
         running_thread()->fd_table[locl_fd] = -1;
     }
     return ret;
@@ -414,12 +428,20 @@ int32_t sys_write(int32_t fd, const void *buf, uint32_t count)
         printk("sys_write: fd error!!!\n");
         return -1;
     }
+
+    if (ispipe(fd))
+    {
+        return pipe_write(fd, buf, count);
+    }
+
     if (fd == stdout)
     {
         console_put_str((char *)buf);
         return count;
     }
+
     fd = fd_locl2glob(fd);
+
     struct file *f = &file_table[fd];
     if (f->fd_flag & O_WRONLY || f->fd_flag & O_RDWR)
     {
@@ -440,6 +462,10 @@ int32_t sys_read(int32_t fd, void *buf, uint32_t count)
     if (fd < 0 || fd == stdout || fd == stderr)
     {
         printk("sys_read: fd error!!!\n");
+    }
+    else if (ispipe(fd))
+    {
+        return pipe_read(fd, buf, count);
     }
     else if (fd == stdin)
     {

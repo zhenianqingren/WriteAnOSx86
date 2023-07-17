@@ -40,6 +40,8 @@ struct ide_channel
     struct disk devices[2];     // 一个通道上连接一主一从硬盘
 };
 
+extern struct ide_channel channels[2];
+
 void ide_init();
 void ide_read(struct disk *hd, uint32_t lba, void *buf, uint32_t sec_cnt);
 void ide_write(struct disk *hd, uint32_t lba, void *buf, uint32_t sec_cnt);

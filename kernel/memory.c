@@ -383,7 +383,7 @@ void *get_one_page(enum pool_flags pf, uint32_t vaddr)
          *如果是用户进程申请用户空间内存
          */
         bit_idx = (vaddr - cur->userprog_vaddr.vaddr_start) / PG_SIZE;
-        ASSERT(bit_idx > 0);
+        ASSERT(bit_idx >= 0);
         bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx, 1);
         // 先将虚拟地址空间对应的位图置1
     }
